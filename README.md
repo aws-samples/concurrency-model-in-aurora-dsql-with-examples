@@ -1,4 +1,4 @@
-## Concurrency Model demo with example
+## Concurrency model retry logic demo with example
 
 In Optimistic Concurrency Control (OCC), implementing backoff and jitter is crucial for managing retries when transactions conflict. Backoff ensures that after a conflict, retries are not immediate but spaced out with progressively longer delays, helping to reduce system load. Jitter introduces randomness to these delays, avoiding synchronized retries that could potentially lead to further conflicts or system overload. Together, backoff and jitter reduce contention and enhance the retry logic’s efficiency in distributed systems employing OCC.  For a deeper dive, refer to theAWS blog on this subject.
 Let’s now walk through a scenario where we simulate an OCC exception in a high-transaction environment and manage retries using backoff and jitter strategies.
