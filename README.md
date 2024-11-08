@@ -4,7 +4,7 @@ In Optimistic Concurrency Control (OCC), implementing backoff and jitter is cruc
 Let’s now walk through a scenario where we simulate an OCC exception in a high-transaction environment and manage retries using backoff and jitter strategies.
 
 Step 1: Create the Schema and Tables
-First, use the `create.py` script to create an order schema and two tables: accounts and orders.
+First, use the `create.py` script to create an order schema and two tables: `accounts` and `orders`.
 ```python
 python create.py --host <endpoint>  --database postgres --user <user_name> --region <region>  --schema orders`
 ```
