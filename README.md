@@ -3,19 +3,19 @@
 In Optimistic Concurrency Control (OCC), implementing backoff and jitter is crucial for managing retries when transactions conflict. Backoff ensures that after a conflict, retries are not immediate but spaced out with progressively longer delays, helping to reduce system load. Jitter introduces randomness to these delays, avoiding synchronized retries that could potentially lead to further conflicts or system overload. Together, backoff and jitter reduce contention and enhance the retry logic’s efficiency in distributed systems employing OCC.  For a deeper dive, refer to theAWS blog on this subject.
 Let’s now walk through a scenario where we simulate an OCC exception in a high-transaction environment and manage retries using backoff and jitter strategies.
 
-Step 1: Create the Schema and Tables
+### Step 1: Create the Schema and Tables
 First, use the `create.py` script to create an order schema and two tables: `accounts` and `orders`.
 ```python
 python create.py --host <endpoint>  --database postgres --user <user_name> --region <region>  --schema orders`
 ```
 
-Step 2: Generate Load
+### Step 2: Generate Load
 Run the `load_generator.py` script to generate load for the database, inserting data into the orders table.
 ```python
 python load_generator.py --host <endpoint>  --database postgres --user <user_name> --region <region> --schema orders --tablename orders --threads 10
 ```
 
-Step 3: Simulate OCC Exception
+### Step 3: Simulate OCC Exception
 To introduce an OCC condition, alter the accounts table by adding a new column in another PostgreSQL session.
 `ALTER TABLE order.accounts ADD COLUMN balance INT;`
 
@@ -25,7 +25,7 @@ Once the schema is updated, the load_generator.py script will fail with the foll
 Error during insert: schema has been updated by another transaction, please retry: (OC001)
 ```
 
-Step 4: Implement Backoff and Jitter
+### Step 4: Implement Backoff and Jitter
 Now, let's integrate backoff and jitter into the retry logic by running the `retry_backoff_jitter.py` script, an enhanced version of the `load_generator.py` script with built-in retry mechanisms.
 
 ```python
