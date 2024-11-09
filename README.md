@@ -17,7 +17,10 @@ python load_generator.py --host <endpoint>  --database postgres --user <user_nam
 
 ### Step 3: Simulate OCC Exception
 To introduce an OCC condition, alter the accounts table by adding a new column in another PostgreSQL session.
-`ALTER TABLE order.accounts ADD COLUMN balance INT;`
+
+```sql
+ALTER TABLE order.accounts ADD COLUMN balance INT;
+```
 
 Once the schema is updated, the load_generator.py script will fail with the following error:
 
@@ -33,7 +36,10 @@ python retry_backoff_jitter.py --host <endpoint>  --database postgres --user <us
 ```
 
 Now, introduce another schema change in the accounts table.
-`ALTER TABLE order.accounts ADD COLUMN totalsale INT;`
+
+```sql
+ALTER TABLE order.accounts ADD COLUMN totalsale INT;
+```
 
 As the retry logic kicks in, you’ll see the script handling the OCC exception with retries:
 
