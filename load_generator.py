@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 #
-# load_test.py - Load test script for bulk data insertion into a PostgreSQL table, running for 15 minutes
+# load_generator.py - Load test script for bulk data insertion into a Aurora DSQL
 #
 # Copyright 2024 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 import boto3
 import psycopg
+from psycopg import sql, AsyncConnection
 import psycopg.sql as sql
 import argparse
 import asyncio
@@ -15,55 +16,25 @@ import sys
 import secrets
 
 
-def generate_token(hostname, action, region, expires_in_secs=900):
-    """
-    Generates an IAM authentication token.
-
-    :param str hostname: The hostname of the cluster.
-    :param str action: The specific IAM action for which the token is required.
-    :param str region: The AWS region where the cluster is located.
-    :param int expires_in_secs: The duration (in seconds) for which the generated token will remain valid.
-    :return: A generated authentication token.
-    :rtype: str
-    """
-    client = boto3.client("axdbfrontend", region_name=region)
-    try:
-        response = client.generate_db_auth_token(hostname, action, region, str(expires_in_secs))
-        return response
-    except TypeError as e:
-        print(f"Error generating token: {e}")
-        print("Attempting to call without expires_in_secs...")
-        response = client.generate_db_auth_token(hostname, action)
-        return response
-
 async def connect_to_database():
     """
-    Establishes an asynchronous connection to the database using IAM authentication.
-
-    :return: An asynchronous database connection.
-    :rtype: psycopg.AsyncConnection
+    Connect to the PostgreSQL database using an inline IAM token generation.
+    :return: psycopg.AsyncConnection
     """
-    global args
+    # Generate the IAM authentication token inline
+    client = boto3.client("dsql", region_name=args.region)
+    password_token = client.generate_db_connect_admin_auth_token(args.host, args.region)
 
-    # Generate the IAM authentication token
-    action = "DbConnectSuperuser"
-    expires_in_secs = 900  # You can adjust this value as needed
-    token = generate_token(args.host, action, args.region, expires_in_secs)
-
-    try:
-        # Connect to the PostgreSQL database using the generated token
-        conn = await psycopg.AsyncConnection.connect(
-            host=args.host,
-            dbname=args.database,
-            user=args.user,
-            password=token,
-            autocommit=True  # Autocommit mode to handle each insert independently
-        )
-        print("Successfully connected to the database.")
-        return conn
-    except Exception as e:
-        print(f"Error connecting to the database: {e}")
-        return None
+    # Connect to the PostgreSQL database using the generated token
+    conn = await AsyncConnection.connect(
+        host=args.host,
+        dbname=args.database,
+        user=args.user,
+        password=password_token,
+        sslmode="require",
+        autocommit=True
+    )
+    return conn
 
 async def main():
     parse_args(sys.argv[1:])
