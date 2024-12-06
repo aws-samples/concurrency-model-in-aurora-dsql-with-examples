@@ -5,7 +5,7 @@ import asyncio
 import boto3
 import os
 import psycopg
-from psycopg import sql
+from psycopg import sql, AsyncConnection
 
 # Create the argument parser
 parser = argparse.ArgumentParser()
@@ -21,43 +21,24 @@ parser.add_argument("--schema", required=True, help="Schema name")
 args = parser.parse_args()
 
 
-def generate_token(hostname, action, region, expires_in_secs=900):
-    """
-    Generates an IAM authentication token.
-
-    :param str hostname: The hostname of the cluster.
-    :param str action: The specific IAM action for which the token is required.
-    :param str region: The AWS region where the cluster is located.
-    :param int expires_in_secs: The duration (in seconds) for which the generated token will remain valid.
-    :return: A generated authentication token.
-    :rtype: str
-    """
-    client = boto3.client("axdbfrontend", region_name=region)
-    try:
-        response = client.generate_db_auth_token(hostname, action, region, str(expires_in_secs))
-        return response
-    except TypeError as e:
-        print(f"Error generating token: {e}")
-        print("Attempting to call without expires_in_secs...")
-        response = client.generate_db_auth_token(hostname, action)
-        return response
-
-
 async def connect_to_database():
-    # Generate the IAM authentication token
-    action = "DbConnectSuperuser"
-    expires_in_secs = 900  # You can adjust this value as needed
-    token = generate_token(args.host, action, args.region, expires_in_secs)
+    """
+    Connect to the PostgreSQL database using an inline IAM token generation.
+    :return: psycopg.AsyncConnection
+    """
+    # Generate the IAM authentication token inline
+    client = boto3.client("dsql", region_name=args.region)
+    password_token = client.generate_db_connect_admin_auth_token(args.host, args.region)
 
     # Connect to the PostgreSQL database using the generated token
-    conn = await psycopg.AsyncConnection.connect(
+    conn = await AsyncConnection.connect(
         host=args.host,
         dbname=args.database,
         user=args.user,
-        password=token,
-        autocommit=True  # Enabled autocommit mode
+        password=password_token,
+        sslmode="require",
+        autocommit=True
     )
-
     return conn
 
 
